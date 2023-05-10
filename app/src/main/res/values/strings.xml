@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">"I'll Pay"</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">TODO fragment</string>
+
+    <string name="expense_value">$ %s</string>
+
+    <plurals name="dd_remaining">
+        <item quantity="one">%d day left</item>
+        <item quantity="other">%d days left</item>
+    </plurals>
+    <plurals name="hh_remaining">
+        <item quantity="one">%d hour left</item>
+        <item quantity="other">%d hours left</item>
+    </plurals>
+    <plurals name="mm_remaining">
+        <item quantity="one">%d minute left</item>
+        <item quantity="other">%d minutes left</item>
+    </plurals>
+    <string name="pay_now">Pay now!</string>
+    <string name="youre_later">You\'re later!</string>
+</resources>

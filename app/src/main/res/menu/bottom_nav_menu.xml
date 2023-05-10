@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@id/homeFragment"
+        android:title="Overview"
+        android:icon="@drawable/ic_assessment_24"
+        />
+
+    <item
+        android:id="@id/expensesFragment"
+        android:title="Expenses"
+        android:icon="@drawable/ic_paid_24"
+        />
+</menu>
