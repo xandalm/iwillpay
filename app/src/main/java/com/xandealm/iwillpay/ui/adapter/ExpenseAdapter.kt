@@ -4,11 +4,11 @@ import android.content.Context
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.xandealm.iwillpay.R
 import com.xandealm.iwillpay.model.Expense
@@ -17,14 +17,13 @@ import com.xandealm.iwillpay.model.getFormattedCost
 import java.util.Date
 import kotlin.math.floor
 
-private const val TAG = "ExpenseAdapter"
-
 private const val MIN_TIME = 1000 * 60
 private const val HOUR_TIME = MIN_TIME * 60
 private const val DAY_TIME = HOUR_TIME * 24
 
 class ExpenseAdapter(
-    private val ctx: Context
+    private val ctx: Context,
+    private val onDetailsClicked: (Expense) -> Unit
 ): RecyclerView.Adapter<ExpenseAdapter.ExpenseViewHolder>() {
 
     private val dataset: List<Expense> = DataSource.expenses
@@ -32,7 +31,7 @@ class ExpenseAdapter(
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
-    ): ExpenseAdapter.ExpenseViewHolder {
+    ): ExpenseViewHolder {
         return ExpenseViewHolder(LayoutInflater.from(parent.context)
             .inflate(R.layout.expense_list_item, parent, false))
     }
@@ -41,16 +40,18 @@ class ExpenseAdapter(
         val resources = ctx.resources
         val item = dataset[position]
 
-        var headerText = SpannableString("${item.title} \u2022 ${item.getFormattedCost()}")
+        val headerText = SpannableString("${item.title} \u2022 ${item.getFormattedCost()}")
         headerText.setSpan(
-            ForegroundColorSpan(resources.getColor(R.color.red_700)),
+            ForegroundColorSpan(
+                ContextCompat.getColor(ctx,R.color.red_700)
+            ),
             item.title.length + 3,
             headerText.length,
             Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
 
         holder.expenseTitleCost?.text = headerText
 
-        var diffTime = item.dueDate.time - Date().time
+        val diffTime = item.dueDate.time - Date().time
         val remaining = if(diffTime >= DAY_TIME) {
             val ddRemaining = floor((diffTime / DAY_TIME).toDouble()).toInt()
             resources.getQuantityString(R.plurals.dd_remaining,ddRemaining,ddRemaining)
@@ -68,6 +69,10 @@ class ExpenseAdapter(
 
         holder.expenseRemaining?.text = remaining
         holder.expenseDescription?.text = item.description
+
+        holder.expenseDetailsBtn?.setOnClickListener {
+            onDetailsClicked(item)
+        }
     }
 
     override fun getItemCount(): Int {
@@ -78,6 +83,7 @@ class ExpenseAdapter(
         val expenseTitleCost: TextView? = view?.findViewById(R.id.eli_title_cost)
         val expenseRemaining: TextView? = view?.findViewById(R.id.eli_remaining)
         val expenseDescription: TextView? = view?.findViewById(R.id.eli_description)
+        val expenseDetailsBtn: TextView? = view?.findViewById(R.id.eli_details_btn)
     }
 
 }

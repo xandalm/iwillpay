@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/start_nav_graph"
+    app:startDestination="@id/overviewFragment">
+
+    <fragment
+        android:id="@+id/overviewFragment"
+        android:name="com.xandealm.iwillpay.ui.OverviewFragment"
+        android:label="fragment_overview"
+        tools:layout="@layout/fragment_overview"/>
+
+    <fragment
+        android:id="@+id/expensesListFragment"
+        android:name="com.xandealm.iwillpay.ui.ExpensesListFragment"
+        android:label="fragment_expenses_list"
+        tools:layout="@layout/fragment_expenses_list" />
+</navigation>

@@ -3,16 +3,23 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/homeFragment">
+    app:startDestination="@id/startFragment">
 
     <fragment
-        android:id="@+id/homeFragment"
-        android:name="com.xandealm.iwillpay.ui.HomeFragment"
-        android:label="fragment_home"
-        tools:layout="@layout/fragment_home" />
+        android:id="@+id/startFragment"
+        android:name="com.xandealm.iwillpay.ui.StartFragment"
+        android:label="fragment_start"
+        tools:layout="@layout/fragment_start">
+        <action
+            android:id="@+id/action_startFragment_to_start_nav_graph"
+            app:destination="@id/start_nav_graph" />
+    </fragment>
+<!--    <include app:graph="@navigation/start_nav_graph"/>-->
     <fragment
-        android:id="@+id/expensesFragment"
-        android:name="com.xandealm.iwillpay.ui.ExpensesFragment"
-        android:label="fragment_expenses"
-        tools:layout="@layout/fragment_expenses" />
+        android:id="@+id/expenseFragment"
+        android:name="com.xandealm.iwillpay.ui.ExpenseFragment"
+        android:label="fragment_expense"
+        tools:layout="@layout/fragment_expense" />
+    <include app:graph="@navigation/start_nav_graph" />
+
 </navigation>

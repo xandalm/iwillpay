@@ -2,13 +2,10 @@ package com.xandealm.iwillpay
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.navigation.ui.setupWithNavController
-import androidx.recyclerview.widget.RecyclerView
-import com.xandealm.iwillpay.R
 import com.xandealm.iwillpay.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -23,12 +20,15 @@ class MainActivity : AppCompatActivity() {
 
         val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
-        val appBarConfiguration = AppBarConfiguration(setOf(
-            R.id.homeFragment,
-            R.id.expensesFragment
-        ))
+        Log.d("MainActivity",navController.toString())
 
-        setupActionBarWithNavController(navController, appBarConfiguration)
-        binding.navBar.setupWithNavController(navController)
+        setupActionBarWithNavController(navController)
+    }
+
+    /**
+     * Handle navigation when the user chooses Up from the action bar.
+     */
+    override fun onSupportNavigateUp(): Boolean {
+        return navController.navigateUp() || super.onSupportNavigateUp()
     }
 }

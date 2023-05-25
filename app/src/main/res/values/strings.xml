@@ -20,5 +20,14 @@
     <string name="pay_now">Pay now!</string>
     <string name="youre_later">You\'re later!</string>
 
+    <!-- NavBar -->
+    <string name="menu_item_overview">Overview</string>
+    <string name="menu_item_expenses">Expenses</string>
+
+    <!-- Expense edit -->
     <string name="currency_symbol">$</string>
+    <string name="expense_title_hint">Title</string>
+    <string name="expense_cost_hint">Cost</string>
+    <string name="expense_due_date_hint">Due date</string>
+    <string name="expense_description_hint">Description</string>
 </resources>
