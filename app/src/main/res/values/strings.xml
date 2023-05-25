@@ -19,4 +19,6 @@
     </plurals>
     <string name="pay_now">Pay now!</string>
     <string name="youre_later">You\'re later!</string>
+
+    <string name="currency_symbol">$</string>
 </resources>

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="fab_margin">16dp</dimen>
-    <dimen name="common_margin">8dp</dimen>
     <dimen name="tiny_margin">4dp</dimen>
+    <dimen name="common_margin">8dp</dimen>
+    <dimen name="large_margin">16dp</dimen>
 
     <!-- eli (expense list item) -->
     <dimen name="eli_corner_radius">8dp</dimen>
