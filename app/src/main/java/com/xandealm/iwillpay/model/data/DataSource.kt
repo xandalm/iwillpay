@@ -16,34 +16,34 @@ private const val MIN_TIME = 1000 * 60
 object DataSource {
     val expenses = listOf<Expense>(
         Expense(
-            "Mercado",
-            "Compras da semana",
-            230.5,
-            Date(current.time - DAY_TIME)
+            title = "Mercado",
+            description = "Compras da semana",
+            cost = 230.5,
+            dueDate = Date(current.time - DAY_TIME)
         ),
         Expense(
-            "Films and Series stream service",
-            "Children school",
-            45.0,
-            Date(current.time + MIN_TIME)
+            title = "Films and Series stream service",
+            description = "Children school",
+            cost = 45.0,
+            dueDate = Date(current.time + MIN_TIME)
         ),
         Expense(
-            "Luz",
-            "Serviços fornecidos pela Energia Renovável",
-            50.0,
-            Date(current.time + (12 * MIN_TIME))
+            title = "Luz",
+            description = "Serviços fornecidos pela Energia Renovável",
+            cost = 50.0,
+            dueDate = Date(current.time + (12 * MIN_TIME))
         ),
         Expense(
-            "Água",
-            "Serviços fornecidos pela Água é Vida",
-            40.0,
-            Date(current.time + (2 * HOUR_TIME))
+            title = "Água",
+            description = "Serviços fornecidos pela Água é Vida",
+            cost = 40.0,
+            dueDate = Date(current.time + (2 * HOUR_TIME))
         ),
         Expense(
-            "Internet",
-            "Conexão Eterna",
-            90.0,
-            Date(current.time + (60 * DAY_TIME))
+            title = "Internet",
+            description = "Conexão Eterna",
+            cost = 90.0,
+            dueDate = Date(current.time + (60 * DAY_TIME))
         ),
     )
 }
