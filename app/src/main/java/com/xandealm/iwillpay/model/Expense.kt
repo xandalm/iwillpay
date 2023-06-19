@@ -4,11 +4,12 @@ import java.text.NumberFormat
 import java.util.Date
 
 data class Expense (
-    val id: Long? = null,
-    val title: String,
-    val description: String,
-    val cost: Double,
-    val dueDate: Date
+    var id: Long,
+    var title: String,
+    var description: String? = null,
+    var cost: Float,
+    var dueDate: Date,
+    var paidAt: Date? = null,
 )
 
 fun Expense.getFormattedCost(): String = NumberFormat.getCurrencyInstance().format(cost)
