@@ -29,8 +29,8 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:padding="@dimen/tiny_margin"
-            android:background="?attr/background" />
+            android:padding="@dimen/common_margin"
+            android:background="#F5F5FF" />
 
     </LinearLayout>
 

@@ -1,11 +1,13 @@
 package com.xandealm.iwillpay.ui
 
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import androidx.fragment.app.Fragment
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.xandealm.iwillpay.NavGraphDirections
 import com.xandealm.iwillpay.R
 import com.xandealm.iwillpay.databinding.FragmentExpensesListBinding
 import com.xandealm.iwillpay.ui.adapter.ExpenseAdapter
@@ -34,13 +36,17 @@ class ExpensesListFragment : Fragment() {
         val activity = requireActivity()
         val mainNavController = activity.findNavController(R.id.nav_host_fragment)
         binding.newExpenseBtn.setOnClickListener {
-            mainNavController.navigate(R.id.expenseFragment)
+            val action = NavGraphDirections.actionGlobalExpenseFragment(0)
+            mainNavController.navigate(action)
         }
 
         expenseRecyclerView = binding.expenseRecyclerView
         expenseRecyclerView.layoutManager = LinearLayoutManager(this.requireContext())
-        expenseRecyclerView.adapter = ExpenseAdapter(this.requireContext()) {
-            mainNavController.navigate(R.id.expenseFragment)
+        expenseRecyclerView.adapter = ExpenseAdapter(
+            this.requireContext(),
+        ) {
+            val action = NavGraphDirections.actionGlobalExpenseFragment(it.id)
+            mainNavController.navigate(action)
         }
 
     }

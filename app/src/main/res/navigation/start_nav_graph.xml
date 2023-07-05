@@ -9,8 +9,7 @@
         android:id="@+id/overviewFragment"
         android:name="com.xandealm.iwillpay.ui.OverviewFragment"
         android:label="fragment_overview"
-        tools:layout="@layout/fragment_overview"/>
-
+        tools:layout="@layout/fragment_overview" />
     <fragment
         android:id="@+id/expensesListFragment"
         android:name="com.xandealm.iwillpay.ui.ExpensesListFragment"

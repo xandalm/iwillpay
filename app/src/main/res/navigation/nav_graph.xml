@@ -27,5 +27,6 @@
     <action
         android:id="@+id/action_global_expenseFragment"
         app:destination="@id/expenseFragment" />
+    <include app:graph="@navigation/start_nav_graph" />
 
 </navigation>
