@@ -1,18 +1,19 @@
 package com.xandealm.iwillpay.ui.adapter
 
 import android.content.Context
+import android.graphics.Color
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
+import android.util.Log
+import android.view.*
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.xandealm.iwillpay.R
+import com.xandealm.iwillpay.databinding.ExpenseListItemBinding
 import com.xandealm.iwillpay.model.Expense
-import com.xandealm.iwillpay.model.data.DataSource
 import com.xandealm.iwillpay.model.getFormattedCost
 import java.util.Date
 import kotlin.math.floor
@@ -23,67 +24,92 @@ private const val DAY_TIME = HOUR_TIME * 24
 
 class ExpenseAdapter(
     private val ctx: Context,
-    private val onDetailsClicked: (Expense) -> Unit
-): RecyclerView.Adapter<ExpenseAdapter.ExpenseViewHolder>() {
+    private val onDetailsClicked: (Expense) -> Unit,
+): ListAdapter<Expense, ExpenseAdapter.ExpenseViewHolder>(DiffCallback) {
 
-    private val dataset: List<Expense> = DataSource.expenses
+    class ExpenseViewHolder(private val ctx: Context, private val binding: ExpenseListItemBinding): RecyclerView.ViewHolder(binding.root) {
+
+        private fun getTitleCost(expense: Expense): SpannableString {
+            val titleCost = SpannableString("${expense.title} \u2022 ${expense.getFormattedCost()}")
+            titleCost.setSpan(
+                ForegroundColorSpan(
+                    ContextCompat.getColor(ctx,R.color.red_700)
+                ),
+                expense.title.length + 3,
+                titleCost.length,
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            return titleCost
+        }
+
+        private fun getRemaining(expense: Expense): String {
+            val diffTime = expense.dueDate.time - Date().time
+            return if(diffTime >= DAY_TIME) {
+                val ddRemaining = floor((diffTime / DAY_TIME).toDouble()).toInt()
+                ctx.resources.getQuantityString(R.plurals.dd_remaining,ddRemaining,ddRemaining)
+            } else if(diffTime >= HOUR_TIME) {
+                val hhRemaining = floor((diffTime / HOUR_TIME).toDouble()).toInt()
+                ctx.resources.getQuantityString(R.plurals.hh_remaining,hhRemaining,hhRemaining)
+            } else if(diffTime >= (MIN_TIME * 5)) {
+                val mmRemaining = floor((diffTime / MIN_TIME).toDouble()).toInt()
+                ctx.resources.getQuantityString(R.plurals.mm_remaining,mmRemaining,mmRemaining)
+            } else if (diffTime > 0L) {
+                ctx.resources.getString(R.string.pay_now)
+            } else {
+                ctx.resources.getString(R.string.youre_later)
+            }
+        }
+
+        fun bind(expense: Expense, onDetailsClicked: (Expense) -> Unit) {
+
+            binding.apply {
+                eliTitleCost.text = getTitleCost(expense)
+                eliRemaining.text = getRemaining(expense)
+                val placeholderDescription = SpannableString("No description")
+                placeholderDescription.setSpan(
+                    ForegroundColorSpan(Color.parseColor("#22000000")),
+                    0,
+                    placeholderDescription.length,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+                eliDescription.text = expense.description ?: placeholderDescription
+            }
+        }
+
+    }
+
+    companion object {
+        private val DiffCallback = object: DiffUtil.ItemCallback<Expense>() {
+            override fun areItemsTheSame(oldItem: Expense, newItem: Expense): Boolean {
+                return oldItem.id == newItem.id
+            }
+
+            override fun areContentsTheSame(oldItem: Expense, newItem: Expense): Boolean {
+                return oldItem == newItem
+            }
+
+        }
+    }
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
     ): ExpenseViewHolder {
-        return ExpenseViewHolder(LayoutInflater.from(parent.context)
-            .inflate(R.layout.expense_list_item, parent, false))
+        return ExpenseViewHolder(
+            ctx,
+            ExpenseListItemBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            )
+        )
     }
 
     override fun onBindViewHolder(holder: ExpenseViewHolder, position: Int) {
-        val resources = ctx.resources
-        val item = dataset[position]
-
-        val headerText = SpannableString("${item.title} \u2022 ${item.getFormattedCost()}")
-        headerText.setSpan(
-            ForegroundColorSpan(
-                ContextCompat.getColor(ctx,R.color.red_700)
-            ),
-            item.title.length + 3,
-            headerText.length,
-            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-
-        holder.expenseTitleCost?.text = headerText
-
-        val diffTime = item.dueDate.time - Date().time
-        val remaining = if(diffTime >= DAY_TIME) {
-            val ddRemaining = floor((diffTime / DAY_TIME).toDouble()).toInt()
-            resources.getQuantityString(R.plurals.dd_remaining,ddRemaining,ddRemaining)
-        } else if(diffTime >= HOUR_TIME) {
-            val hhRemaining = floor((diffTime / HOUR_TIME).toDouble()).toInt()
-            resources.getQuantityString(R.plurals.hh_remaining,hhRemaining,hhRemaining)
-        } else if(diffTime >= (MIN_TIME * 5)) {
-            val mmRemaining = floor((diffTime / MIN_TIME).toDouble()).toInt()
-            resources.getQuantityString(R.plurals.mm_remaining,mmRemaining,mmRemaining)
-        } else if (diffTime > 0L) {
-            resources.getString(R.string.pay_now)
-        } else {
-            resources.getString(R.string.youre_later)
+        val current = getItem(position)
+        holder.bind(current, onDetailsClicked)
+        holder.itemView.setOnClickListener {
+            onDetailsClicked(current)
         }
-
-        holder.expenseRemaining?.text = remaining
-        holder.expenseDescription?.text = item.description
-
-        holder.expenseDetailsBtn?.setOnClickListener {
-            onDetailsClicked(item)
-        }
-    }
-
-    override fun getItemCount(): Int {
-        return dataset.size
-    }
-
-    class ExpenseViewHolder(view: View?): RecyclerView.ViewHolder(view!!) {
-        val expenseTitleCost: TextView? = view?.findViewById(R.id.eli_title_cost)
-        val expenseRemaining: TextView? = view?.findViewById(R.id.eli_remaining)
-        val expenseDescription: TextView? = view?.findViewById(R.id.eli_description)
-        val expenseDetailsBtn: TextView? = view?.findViewById(R.id.eli_details_btn)
     }
 
 }

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipChildren="true"
+        android:background="#FF449944">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/large_margin"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:maxLines="1"
+            android:gravity="start"
+            android:textAlignment="gravity"
+            android:textSize="24sp"
+            android:textStyle="italic"
+            android:textAllCaps="true"
+            android:textColor="#AAFFFFFF"
+            android:letterSpacing=".35"
+            app:fontWeight="700"
+            android:text="@string/swipe_paid_out"/>
+
+        <ImageView
+            android:layout_width="110dp"
+            android:layout_height="110dp"
+            android:scaleType="center"
+            android:background="#FF449944"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:src="@drawable/ic_paid_128"
+            app:tint="#FF448F44"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</FrameLayout>

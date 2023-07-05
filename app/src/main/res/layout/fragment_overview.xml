@@ -10,8 +10,7 @@
         android:id="@+id/expense_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:padding="@dimen/tiny_margin"
-        android:background="?attr/background"
+        android:background="#F5F5FF"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

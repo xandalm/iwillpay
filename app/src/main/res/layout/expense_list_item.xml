@@ -5,23 +5,19 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="@dimen/common_margin" >
-
-    <androidx.cardview.widget.CardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/white"
-        app:cardCornerRadius="@dimen/eli_corner_radius" >
+    android:background="@color/white"
+    android:descendantFocusability="blocksDescendants">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="@dimen/common_margin" >
+            android:padding="@dimen/large_margin" >
 
             <TextView
                 android:id="@+id/eli_title_cost"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/common_margin"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/eli_remaining"
@@ -40,28 +36,27 @@
             <TextView
                 android:id="@+id/eli_description"
                 style="@style/Widget.Iwillpay.TextView.EliDescription"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/common_margin"
-                android:paddingEnd="@dimen/common_margin"
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:maxLines="1"
                 app:layout_constraintStart_toStartOf="@id/eli_title_cost"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/eli_title_cost"
                 tools:text="Expense description loren ipsum abanamore elilanka trindamare ololê abanamore elilanka trindamare ololê abanamore elilanka trindamare ololê" />
 
-            <TextView
-                android:id="@+id/eli_details_btn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/common_margin"
-                android:clickable="true"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/eli_description"
-                style="@style/Widget.Iwillpay.TextView.EliDetailsBtn"
-                android:text="details" />
+<!--            <TextView-->
+<!--                android:id="@+id/eli_details_btn"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_margin="@dimen/common_margin"-->
+<!--                android:clickable="true"-->
+<!--                app:layout_constraintEnd_toEndOf="parent"-->
+<!--                app:layout_constraintTop_toBottomOf="@id/eli_description"-->
+<!--                style="@style/Widget.Iwillpay.TextView.EliDetailsBtn"-->
+<!--                android:text="@string/details_btn" />-->
 
         </androidx.constraintlayout.widget.ConstraintLayout>
-    </androidx.cardview.widget.CardView>
 </FrameLayout>

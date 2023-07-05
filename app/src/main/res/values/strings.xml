@@ -19,15 +19,27 @@
     </plurals>
     <string name="pay_now">Pay now!</string>
     <string name="youre_later">You\'re later!</string>
+    <string name="details_btn">Details</string>
+
+    <string name="swipe_paid_out">Paid</string>
+    <string name="swipe_remove">Get out</string>
 
     <!-- NavBar -->
     <string name="menu_item_overview">Overview</string>
     <string name="menu_item_expenses">Expenses</string>
 
     <!-- Expense edit -->
+
+    <string name="new_expense_menu_title">New Expense</string>
+
     <string name="currency_symbol">$</string>
     <string name="expense_title_hint">Title</string>
     <string name="expense_cost_hint">Cost</string>
     <string name="expense_due_date_hint">Due date</string>
     <string name="expense_description_hint">Description</string>
+
+    <!-- Set as paid dialog -->
+    <string name="set_paid_out_title">Set as paid</string>
+    <string name="set_as_paid_message">Want to set <annotation textStyle="title_emphasis">%s</annotation> as paid?</string>
+
 </resources>
