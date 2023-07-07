@@ -1,12 +1,13 @@
 package com.xandealm.iwillpay.ui.viewmodel
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Transformations
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.*
 import com.xandealm.iwillpay.model.Expense
-import com.xandealm.iwillpay.model.data.DataSource
+import com.xandealm.iwillpay.model.data.ExpenseDao
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
+import java.text.DateFormat
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -24,45 +25,52 @@ class ExpenseException(val errno: String, message: String): RuntimeException(mes
 
 private const val TAG = "ExpenseViewModel"
 
-class ExpenseViewModel: ViewModel() {
+class ExpenseViewModel(private val expenseDao: ExpenseDao): ViewModel() {
 
-    private val _expenses: MutableLiveData<MutableList<Expense>> = MutableLiveData(DataSource.expenses)
-
-    private var _id: MutableLiveData<Long> = MutableLiveData(0)
+    private var _id: MutableLiveData<Long> = MutableLiveData()
     val id: LiveData<Long> get() = _id
 
-    private var _title: MutableLiveData<String> = MutableLiveData()
-    val title: LiveData<String> get() = _title
+    private var _title: MutableLiveData<String?> = MutableLiveData()
+    val title: LiveData<String?> get() = _title
 
     private var _description: MutableLiveData<String?> = MutableLiveData()
     val description: LiveData<String?> get() = _description
 
-    private var _cost: MutableLiveData<Float> = MutableLiveData()
+    private var _cost: MutableLiveData<Float?> = MutableLiveData()
     val cost: LiveData<String> get() = Transformations.map(_cost) {
-        NumberFormat.getCurrencyInstance().format(it)
-    }
-
-    private var _dueDate: MutableLiveData<Date> = MutableLiveData()
-    val dueDate: LiveData<String> get() = Transformations.map(_dueDate) {
-        SimpleDateFormat.getDateTimeInstance().format(it)
-    }
-
-    fun requestExpenseToEdit(id: Long?) {
-        val found = retrieveExpense(id ?: 0)
-        found?.let {
-            _id.value = it.id
-            _title.value = it.title
-            _description.value = it.description
-            _cost.value = it.cost
-            _dueDate.value = it.dueDate
+        it?.let {
+            NumberFormat.getCurrencyInstance().format(it)
         }
     }
 
-    private fun retrieveExpense(id: Long): Expense? {
-        return _expenses.value?.find { it.id == id }
+    private var _dueDate: MutableLiveData<Date?> = MutableLiveData()
+    val dueDate: LiveData<String?> get() = Transformations.map(_dueDate) {
+        it?.let {
+            SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT,DateFormat.SHORT).format(it)
+        }
     }
 
-    fun count() = _expenses.value!!.size
+    private var _paidAt: MutableLiveData<Date?> = MutableLiveData()
+    val paidAt: LiveData<Date?> get() = _paidAt
+
+    fun permissionToEdit(id: Long): LiveData<Boolean> {
+        val permission = MutableLiveData<Boolean>()
+        viewModelScope.launch {
+            getExpense(id).let {
+                _id.value = it?.id
+                _title.value = it?.title
+                _description.value = it?.description
+                _cost.value = it?.cost
+                _dueDate.value = it?.dueDate
+                permission.postValue(true)
+            }
+        }
+        return permission
+    }
+
+    private suspend fun getExpense(id: Long): Expense? {
+        return expenseDao.getById(id).firstOrNull()
+    }
 
     fun setTitle(title: String) {
         _title.value = title
@@ -80,67 +88,73 @@ class ExpenseViewModel: ViewModel() {
         _dueDate.value = dueDate
     }
 
+    init {
+        reset()
+    }
+
+    private fun reset() {
+        _id.value = 0L
+        _title.value = null
+        _description.value = null
+        _cost.value = null
+        _dueDate.value = null
+    }
+
     private fun assertValidEntry() {
-        if(_title.value.isNullOrEmpty() && _cost.value == null && _dueDate.value == null)
-            throw ExpenseException(errno = ExpenseException.EMPTY_EXPENSE, "Empty expense")
-        else {
-            if (_title.value.isNullOrEmpty())
-                throw ExpenseException(
-                    errno = ExpenseException.INVALID_TITLE,
-                    "Invalid title, it's required!"
-                )
-            if (_cost.value == null || _cost.value!!.compareTo(0.0) <= 0)
-                throw ExpenseException(
-                    errno = ExpenseException.INVALID_COST,
-                    "Invalid cost, must be finite and great than ${NumberFormat.getCurrencyInstance().format(0.0)}"
-                )
-            if (_dueDate.value == null || _dueDate.value!!.before(Date()))
-                throw ExpenseException(
-                    errno = ExpenseException.INVALID_DUE_DATE,
-                    "Cannot registry expense from the past!"
-                )
+        if (_title.value.isNullOrEmpty())
+            throw ExpenseException(
+                errno = ExpenseException.INVALID_TITLE,
+                "Invalid title, it's required!"
+            )
+        if (_cost.value == null || _cost.value!!.compareTo(0.0) <= 0)
+            throw ExpenseException(
+                errno = ExpenseException.INVALID_COST,
+                "Invalid cost, must be finite and great than ${NumberFormat.getCurrencyInstance().format(0.0)}"
+            )
+        if (_dueDate.value == null || _dueDate.value!!.before(Date()))
+            throw ExpenseException(
+                errno = ExpenseException.INVALID_DUE_DATE,
+                "Cannot registry expense from the past!"
+            )
+    }
+
+    private fun createExpense(): Expense {
+        return Expense(
+            id = _id.value!!,
+            title = _title.value!!,
+            description = _description.value,
+            cost = _cost.value!!,
+            dueDate = _dueDate.value!!
+        )
+    }
+
+    fun saveExpense() {
+        try {
+            assertValidEntry()
+            val expense = createExpense()
+            reset()
+            viewModelScope.launch(Dispatchers.IO) {
+                if(expense.id == 0L)
+                    expenseDao.insert(expense)
+                else
+                    expenseDao.update(expense)
+            }
+        } catch (e: ExpenseException) {
+            // user tried to save expense without title, cost or due date
+            // forward error if not all is empty
+            if(!_title.value.isNullOrEmpty() || !_description.value.isNullOrEmpty() || _cost.value != null || _dueDate.value != null)
+                throw e
         }
     }
 
-    fun commit() {
-        try {
-            assertValidEntry()
-            if (_id.value!! > 0) {
-                _expenses.value?.apply {
-                    val index = _id.value!!.toInt() - 1
-                    this[index].apply {
-                        title = _title.value!!
-                        description = _description.value
-                        cost = _cost.value!!
-                        dueDate = _dueDate.value!!
-                    }
-                }
-            } else {
-                if(count() > 0) {
-                    _id.value = _expenses.value!!.last().id.plus(1)
-                    _expenses.value?.add(
-                        Expense(
-                            id = _id.value!!,
-                            title = _title.value!!,
-                            description = _description.value,
-                            cost = _cost.value!!,
-                            dueDate = _dueDate.value!!
-                    ))
-                } else {
-                    _id.value = 1
-                    _expenses.value?.add(Expense(
-                        id = _id.value!!,
-                        title = _title.value!!,
-                        description = _description.value,
-                        cost = _cost.value!!,
-                        dueDate = _dueDate.value!!
-                    ))
-                }
-            }
-        } catch (e: ExpenseException) {
-            if(e.errno != ExpenseException.EMPTY_EXPENSE)
-                throw e
-        }
+}
 
+class ExpenseViewModelFactory(private val expenseDao: ExpenseDao): ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if(modelClass.isAssignableFrom(ExpenseViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return ExpenseViewModel(expenseDao) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel Class")
     }
 }

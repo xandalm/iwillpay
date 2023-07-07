@@ -17,13 +17,12 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.navArgs
+import com.xandealm.iwillpay.IwillpayApplication
 import com.xandealm.iwillpay.R
 import com.xandealm.iwillpay.databinding.FragmentExpenseBinding
-import com.xandealm.iwillpay.model.Expense
-import com.xandealm.iwillpay.model.getFormattedCost
 import com.xandealm.iwillpay.ui.viewmodel.ExpenseException
 import com.xandealm.iwillpay.ui.viewmodel.ExpenseViewModel
-import java.text.SimpleDateFormat
+import com.xandealm.iwillpay.ui.viewmodel.ExpenseViewModelFactory
 import java.util.*
 
 private const val TAG = "ExpenseFragment"
@@ -87,9 +86,15 @@ class ExpenseFragment : Fragment() {
     private var _binding: FragmentExpenseBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: ExpenseViewModel by activityViewModels()
+    private val viewModel: ExpenseViewModel by activityViewModels {
+        ExpenseViewModelFactory(
+            (activity?.application as IwillpayApplication).database.expenseDao()
+        )
+    }
 
     private val navigationArgs: ExpenseFragmentArgs by navArgs()
+
+    private var expenseId = 0L
 
     private val dueDate: Date = Date(0)
 
@@ -102,6 +107,7 @@ class ExpenseFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentExpenseBinding.inflate(inflater,container,false)
+        createMenu()
         return binding.root
     }
 
@@ -114,6 +120,7 @@ class ExpenseFragment : Fragment() {
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
                 return when (menuItem.itemId) {
                     R.id.menu_item_mark_as_paid -> {
+                        saveExpense()
                         true
                     }
                     else -> false
@@ -124,13 +131,17 @@ class ExpenseFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        enableEditing(false)
 
-        createMenu()
-
-        viewModel.requestExpenseToEdit(navigationArgs.expenseId)
+        expenseId = navigationArgs.expenseId
 
         binding.lifecycleOwner = viewLifecycleOwner
         binding.viewModel = viewModel
+
+        viewModel.permissionToEdit(expenseId).observe(viewLifecycleOwner) {
+            Log.d(TAG,it.toString())
+            enableEditing(it)
+        }
 
         binding.apply {
             expenseTitle.setOnFocusChangeListener { v, hasFocus ->
@@ -250,7 +261,7 @@ class ExpenseFragment : Fragment() {
         date.set(Calendar.MINUTE,0)
         date.set(Calendar.MILLISECOND,0)
         try {
-            this.dueDate.time = date.time.time
+            dueDate.time = date.time.time
             val timePickerFragment = TimePickerFragment()
             timePickerFragment.setOnTimeSetListener { _, hourOfDay, minute ->
                 handleTimeSet(hourOfDay, minute)
@@ -264,29 +275,19 @@ class ExpenseFragment : Fragment() {
     private fun handleTimeSet(hourOfDay: Int, minute: Int) {
         try {
             val time = hourOfDay.toLong() * 1000 * 60 * 60 + minute * 1000 * 60
-            this.dueDate.time += time
-            Log.d(TAG,this.dueDate.toString())
+            dueDate.time += time
             viewModel.setDueDate(this.dueDate)
         } catch (e: ExpenseException) {
             Toast.makeText(context,e.message.toString(),Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun bind(expense: Expense) {
-        Log.d(TAG,expense.toString())
+    private fun enableEditing(value: Boolean) {
         binding.apply {
-
-            expenseTitle.setText(expense.title)
-            expenseCost.setText(expense.getFormattedCost())
-            expenseDueDate.setText(SimpleDateFormat.getDateTimeInstance().format(expense.dueDate))
-            expenseDescription.setText((expense.description))
-
-            if(expense.paidAt != null) {
-                expenseTitle.isEnabled = false
-                expenseCost.isEnabled = false
-                expenseDescription.isEnabled = false
-                expenseDueDate.isEnabled = false
-            }
+            expenseTitle.isEnabled = value
+            expenseCost.isEnabled = value
+            expenseDescription.isEnabled = value
+            expenseDueDate.isEnabled = value
         }
     }
 
@@ -296,15 +297,20 @@ class ExpenseFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        Log.d(TAG,"Destroy")
         super.onDestroyView()
         // Hide keyboard.
         unfocusAndHideKeyboard()
         try {
-            viewModel.commit()
+            saveExpense()
         } catch(e: ExpenseException) {
             Toast.makeText(context,e.message.toString(),Toast.LENGTH_SHORT).show()
         }
         _binding = null
+    }
+
+    private fun saveExpense() {
+        viewModel.saveExpense()
     }
 
     private fun unfocusAndHideKeyboard() {

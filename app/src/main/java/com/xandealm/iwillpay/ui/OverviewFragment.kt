@@ -1,5 +1,6 @@
 package com.xandealm.iwillpay.ui
 
+import android.annotation.SuppressLint
 import android.app.Dialog
 import android.graphics.Canvas
 import android.os.Bundle
@@ -20,13 +21,16 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.xandealm.iwillpay.IwillpayApplication
 import com.xandealm.iwillpay.NavGraphDirections
 import com.xandealm.iwillpay.R
 import com.xandealm.iwillpay.databinding.FragmentOverviewBinding
+import com.xandealm.iwillpay.model.Expense
 import com.xandealm.iwillpay.ui.adapter.ExpenseAdapter
 import com.xandealm.iwillpay.ui.util.SwipeDecoration
 import com.xandealm.iwillpay.ui.util.SwipeItemHelper
 import com.xandealm.iwillpay.ui.viewmodel.OverviewViewModel
+import com.xandealm.iwillpay.ui.viewmodel.OverviewViewModelFactory
 import kotlin.experimental.and
 
 private typealias DialogCallBack = () -> Unit
@@ -97,7 +101,11 @@ class OverviewFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var expenseRecyclerView: RecyclerView
 
-    private val viewModel: OverviewViewModel by activityViewModels()
+    private val viewModel: OverviewViewModel by activityViewModels {
+        OverviewViewModelFactory(
+            (activity?.application as IwillpayApplication).database.expenseDao()
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -111,6 +119,7 @@ class OverviewFragment : Fragment() {
         return binding.root
     }
 
+    @SuppressLint("InflateParams")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val supportFragmentManager = activity?.supportFragmentManager
@@ -260,7 +269,7 @@ class OverviewFragment : Fragment() {
                             PaymentDialogFragment()
                                 .setTitle("Pay expense")
                                 .setMessage(spannableMessage)
-                                .setOnYes { payExpense(item.id) }
+                                .setOnYes { viewModel.setAsPaid(item) }
                                 .setOnNo {
                                     sd.setViewHolder(null)
                                     adapter.notifyItemChanged(position)
@@ -296,7 +305,7 @@ class OverviewFragment : Fragment() {
         }
         expenseRecyclerView.addItemDecoration(dividerItemDecoration)
 
-        viewModel.expenses.observe(this.viewLifecycleOwner) { items ->
+        viewModel.highlightedExpenses.observe(this.viewLifecycleOwner) { items ->
             items.let {
                 adapter.submitList(it)
             }
@@ -306,10 +315,6 @@ class OverviewFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    private fun payExpense(id: Long) {
-        viewModel.pay(id)
     }
 
 }

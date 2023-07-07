@@ -1,35 +1,33 @@
 package com.xandealm.iwillpay.ui.viewmodel
 
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import android.util.Log
+import androidx.lifecycle.*
 import com.xandealm.iwillpay.model.Expense
-import com.xandealm.iwillpay.model.data.DataSource
+import com.xandealm.iwillpay.model.data.ExpenseDao
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Date
 
-class OverviewViewModel: ViewModel() {
+private const val TAG = "OverviewViewModel"
 
-    private val _expenses: MutableLiveData<MutableList<Expense>> = MutableLiveData()
-    val expenses get() = _expenses
+class OverviewViewModel(private val expenseDao: ExpenseDao): ViewModel() {
 
-    init {
-        retrieve()
-    }
+    val highlightedExpenses: LiveData<List<Expense>> = expenseDao.getAllNotPaid().asLiveData()
 
-    fun pay(id: Long) {
-        val expense = _expenses.value?.find { it.id == id }
-        expense?.apply {
-            paidAt = Date()
+    fun setAsPaid(expense: Expense) {
+        val updated = expense.copy(paidAt = Date())
+        viewModelScope.launch(Dispatchers.IO) {
+            expenseDao.update(updated)
         }
-        retrieve()
     }
+}
 
-    private fun retrieve() {
-        viewModelScope.launch {
-            _expenses.value = DataSource.expenses.filter { expense ->
-                expense.paidAt == null
-            } as MutableList<Expense>
+class OverviewViewModelFactory(private val expenseDao: ExpenseDao): ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if(modelClass.isAssignableFrom(OverviewViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return OverviewViewModel(expenseDao) as  T
         }
+        throw IllegalArgumentException("Unknown ViewModel Class")
     }
 }
