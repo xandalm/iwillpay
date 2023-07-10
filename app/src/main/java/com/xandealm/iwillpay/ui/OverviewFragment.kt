@@ -1,11 +1,9 @@
 package com.xandealm.iwillpay.ui
 
 import android.annotation.SuppressLint
-import android.app.Dialog
 import android.graphics.Canvas
 import android.os.Bundle
 import android.text.Spannable
-import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.text.Annotation
 import android.text.SpannedString
@@ -13,8 +11,6 @@ import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.app.AlertDialog
-import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.NavHostFragment
@@ -25,74 +21,13 @@ import com.xandealm.iwillpay.IwillpayApplication
 import com.xandealm.iwillpay.NavGraphDirections
 import com.xandealm.iwillpay.R
 import com.xandealm.iwillpay.databinding.FragmentOverviewBinding
-import com.xandealm.iwillpay.model.Expense
 import com.xandealm.iwillpay.ui.adapter.ExpenseAdapter
+import com.xandealm.iwillpay.ui.util.PaymentDialogFragment
 import com.xandealm.iwillpay.ui.util.SwipeDecoration
 import com.xandealm.iwillpay.ui.util.SwipeItemHelper
 import com.xandealm.iwillpay.ui.viewmodel.OverviewViewModel
 import com.xandealm.iwillpay.ui.viewmodel.OverviewViewModelFactory
 import kotlin.experimental.and
-
-private typealias DialogCallBack = () -> Unit
-
-class PaymentDialogFragment: DialogFragment() {
-
-    private lateinit var mTitle: Any
-    private lateinit var mMessage: Any
-    private lateinit var mOnYes: DialogCallBack
-    private lateinit var mOnNo: DialogCallBack
-
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        isCancelable = false
-        val builder = activity?.let {
-            AlertDialog.Builder(it)
-        }
-        if(builder != null) {
-            builder.apply {
-                setTitle(mTitle as CharSequence)
-                setMessage(mMessage as CharSequence)
-                setPositiveButton("OK") { _, _ ->
-                    mOnYes()
-                }
-                setNegativeButton("Cancel") { _, _ ->
-                    mOnNo()
-                }
-            }
-            return builder.create()
-        }
-        throw IllegalStateException("Activity cannot be null")
-    }
-
-    fun setTitle(title: String): PaymentDialogFragment {
-        mTitle = title
-        return this
-    }
-
-    fun setTitle(title: SpannableString): PaymentDialogFragment {
-        mTitle = title
-        return this
-    }
-
-    fun setMessage(message: String): PaymentDialogFragment {
-        mMessage = message
-        return this
-    }
-
-    fun setMessage(message: Spannable): PaymentDialogFragment {
-        mMessage = message
-        return this
-    }
-
-    fun setOnYes(fn: DialogCallBack): PaymentDialogFragment {
-        mOnYes = fn
-        return this
-    }
-
-    fun setOnNo(fn: DialogCallBack): PaymentDialogFragment {
-        mOnNo = fn
-        return this
-    }
-}
 
 private const val TAG = "OverviewFragment"
 class OverviewFragment : Fragment() {
@@ -306,7 +241,7 @@ class OverviewFragment : Fragment() {
         expenseRecyclerView.addItemDecoration(dividerItemDecoration)
 
         viewModel.highlightedExpenses.observe(this.viewLifecycleOwner) { items ->
-            items.let {
+            items?.let {
                 adapter.submitList(it)
             }
         }
