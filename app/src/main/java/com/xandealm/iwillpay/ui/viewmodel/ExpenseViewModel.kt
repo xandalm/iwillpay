@@ -51,17 +51,24 @@ class ExpenseViewModel(private val expenseDao: ExpenseDao): ViewModel() {
     }
 
     private var _paidAt: MutableLiveData<Date?> = MutableLiveData()
-    val paidAt: LiveData<Date?> get() = _paidAt
+    val paidAt: LiveData<String?> get() = Transformations.map(_paidAt) {
+        it?.let {
+            SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT,DateFormat.SHORT).format(it)
+        }
+    }
 
     fun permissionToEdit(id: Long): LiveData<Boolean> {
         val permission = MutableLiveData<Boolean>()
         viewModelScope.launch {
             getExpense(id).let {
-                _id.value = it?.id
-                _title.value = it?.title
-                _description.value = it?.description
-                _cost.value = it?.cost
-                _dueDate.value = it?.dueDate
+                it?.let {
+                    _id.value = it.id
+                    _title.value = it.title
+                    _description.value = it.description
+                    _cost.value = it.cost
+                    _dueDate.value = it.dueDate
+                    _paidAt.value = it.paidAt
+                }
                 permission.postValue(true)
             }
         }
@@ -98,6 +105,7 @@ class ExpenseViewModel(private val expenseDao: ExpenseDao): ViewModel() {
         _description.value = null
         _cost.value = null
         _dueDate.value = null
+        _paidAt.value = null
     }
 
     private fun assertValidEntry() {
@@ -124,7 +132,8 @@ class ExpenseViewModel(private val expenseDao: ExpenseDao): ViewModel() {
             title = _title.value!!,
             description = _description.value,
             cost = _cost.value!!,
-            dueDate = _dueDate.value!!
+            dueDate = _dueDate.value!!,
+            paidAt = _paidAt.value
         )
     }
 
