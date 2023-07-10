@@ -18,7 +18,7 @@ import kotlin.math.*
 
 private const val TAG = "SwipeItemHelper"
 
-class SwipeItemHelper(
+open class SwipeItemHelper(
     callback: Callback
 ): RecyclerView.ItemDecoration(),RecyclerView.OnChildAttachStateChangeListener {
 
@@ -71,6 +71,9 @@ class SwipeItemHelper(
 
     private var mActivePointerId = -1
 
+    private var mTargetViewHolderBlocked: RecyclerView.ViewHolder? = null
+    private var mActivePointerIdBlocked = -1
+
     private var mStatus: Byte = STATUS_IDLE
 
     private val mAnimations = mutableListOf<CustomAnimator>()
@@ -107,6 +110,8 @@ class SwipeItemHelper(
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     mActivePointerId = -1
+                    mActivePointerIdBlocked = -1
+                    mTargetViewHolderBlocked = null
                     select(null, STATUS_IDLE)
                 }
                 else -> {
@@ -237,7 +242,7 @@ class SwipeItemHelper(
         mRecyclerView.invalidate()
     }
 
-    fun postOnSwipe(anim: CustomAnimator, dir: Byte) {
+    private fun postOnSwipe(anim: CustomAnimator, dir: Byte) {
         mRecyclerView.post(object: Runnable {
             override fun run() {
                 if(mRecyclerView.isAttachedToWindow
@@ -258,7 +263,11 @@ class SwipeItemHelper(
         return mAnimations.find { !it.terminated } != null
     }
 
-    fun checkSelectedToSwipe(action: Int, e: MotionEvent, index: Int) {
+    open fun onSelectToSwipe(viewHolder: RecyclerView.ViewHolder): Boolean {
+        return true
+    }
+
+    private fun checkSelectedToSwipe(action: Int, e: MotionEvent, index: Int) {
         if(mTargetViewHolder != null || action != MotionEvent.ACTION_MOVE || mStatus == STATUS_SCROLLING)
             return
         if (mRecyclerView.scrollState == RecyclerView.SCROLL_STATE_DRAGGING) {
@@ -277,10 +286,22 @@ class SwipeItemHelper(
                     return
                 if((deltaX > 0).and(mDirs and TO_RIGHT == 0.toByte()))
                     return
+                val vh = mRecyclerView.getChildViewHolder(v)
+                // check if item is blocked (SECOND+ times recognized item in same event id)
+                if(mActivePointerIdBlocked == mActivePointerId && mTargetViewHolderBlocked == vh)
+                    return
+                // check for proceed (FIRST time recognized item)
+                if(!onSelectToSwipe(vh)) {
+                    // when not proceed
+                    // block item in this event id
+                    mTargetViewHolderBlocked = vh
+                    mActivePointerIdBlocked = mActivePointerId
+                    return
+                }
                 mDeltaX = 0f
                 mDeltaY = 0f
                 mActivePointerId = e.getPointerId(0)
-                select(mRecyclerView.getChildViewHolder(v), STATUS_SWIPING)
+                select(vh, STATUS_SWIPING)
                 mScope.launch {
                     mCallback.beforeSliding(
                         mTargetViewHolder!!,
