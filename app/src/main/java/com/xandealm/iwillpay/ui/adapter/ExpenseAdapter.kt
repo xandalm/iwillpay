@@ -22,12 +22,15 @@ private const val MIN_TIME = 1000 * 60
 private const val HOUR_TIME = MIN_TIME * 60
 private const val DAY_TIME = HOUR_TIME * 24
 
+private const val TAG = "ExpenseAdapter"
 class ExpenseAdapter(
     private val ctx: Context,
     private val onDetailsClicked: (Expense) -> Unit,
 ): ListAdapter<Expense, ExpenseAdapter.ExpenseViewHolder>(DiffCallback) {
 
     class ExpenseViewHolder(private val ctx: Context, private val binding: ExpenseListItemBinding): RecyclerView.ViewHolder(binding.root) {
+
+        var expenseIsPaid = false
 
         private fun getTitleCost(expense: Expense): SpannableString {
             val titleCost = SpannableString("${expense.title} \u2022 ${expense.getFormattedCost()}")
@@ -60,7 +63,7 @@ class ExpenseAdapter(
         }
 
         fun bind(expense: Expense, onDetailsClicked: (Expense) -> Unit) {
-
+            expenseIsPaid = expense.paidAt != null
             binding.apply {
                 eliTitleCost.text = getTitleCost(expense)
                 eliRemaining.text = getRemaining(expense)
