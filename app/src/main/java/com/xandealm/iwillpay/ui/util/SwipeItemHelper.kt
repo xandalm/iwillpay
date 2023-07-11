@@ -264,7 +264,7 @@ open class SwipeItemHelper(
         return mAnimations.find { !it.terminated } != null
     }
 
-    open fun onSelectToSwipe(viewHolder: RecyclerView.ViewHolder): Boolean {
+    open fun onSelectToSwipe(viewHolder: RecyclerView.ViewHolder, direction: Byte): Boolean {
         return true
     }
 
@@ -286,13 +286,14 @@ open class SwipeItemHelper(
 
         if(absX > absY) {
             if(absX > mDensity!!) {
-                if((deltaX < 0).and(mDirs and TO_LEFT == 0.toByte()))
-                    return
-                if((deltaX > 0).and(mDirs and TO_RIGHT == 0.toByte()))
-                    return
+//                if((deltaX < 0).and(mDirs and TO_LEFT == 0.toByte())
+//                    return
+//                if((deltaX > 0).and(mDirs and TO_RIGHT == 0.toByte()))
+//                    return
                 val vh = mRecyclerView.getChildViewHolder(v)
+                val direction = if (deltaX > 0) TO_RIGHT else TO_LEFT
                 // check for proceed (FIRST time recognized item)
-                if(!onSelectToSwipe(vh)) {
+                if(!onSelectToSwipe(vh,direction)) {
                     // when not proceed
                     // block item in this event id
                     mInvalidatedPointerId = mActivePointerId
@@ -302,10 +303,10 @@ open class SwipeItemHelper(
                 mDeltaY = 0f
                 mActivePointerId = e.getPointerId(0)
                 select(vh, STATUS_SWIPING)
-                mScope.launch {
+                mTargetViewHolder?.let {
                     mCallback.beforeSliding(
-                        mTargetViewHolder!!,
-                        if (deltaX > 0) TO_RIGHT else TO_LEFT
+                        it,
+                        direction
                     )
                 }
             }
