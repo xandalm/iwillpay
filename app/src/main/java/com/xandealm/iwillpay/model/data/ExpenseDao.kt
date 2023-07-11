@@ -16,7 +16,7 @@ interface ExpenseDao {
     @Query("SELECT * FROM expense ORDER BY id ASC")
     fun getAll(): Flow<List<Expense>>
 
-    @Query("SELECT * FROM expense WHERE paid_at IS NULL ORDER BY id ASC")
+    @Query("SELECT * FROM expense WHERE paid_at IS NULL ORDER BY due_date ASC")
     fun getAllNotPaid(): Flow<List<Expense>>
 
     @Query("SELECT * FROM expense WHERE paid_at IS NULL AND due_date < :datetime ORDER BY id ASC")
@@ -26,7 +26,7 @@ interface ExpenseDao {
     fun getById(id: Long): Flow<Expense>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(expense: Expense)
+    suspend fun insert(expense: Expense): Long
 
     @Update
     suspend fun update(expense: Expense)
