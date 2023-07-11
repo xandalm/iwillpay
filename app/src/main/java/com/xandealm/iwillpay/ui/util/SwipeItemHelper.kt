@@ -70,9 +70,7 @@ open class SwipeItemHelper(
     private val mPosition = PointF()
 
     private var mActivePointerId = -1
-
-    private var mTargetViewHolderBlocked: RecyclerView.ViewHolder? = null
-    private var mActivePointerIdBlocked = -1
+    private var mInvalidatedPointerId = -1
 
     private var mStatus: Byte = STATUS_IDLE
 
@@ -86,6 +84,7 @@ open class SwipeItemHelper(
     private val mOnItemTouchListener = object: RecyclerView.SimpleOnItemTouchListener() {
 
         override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+            var forceIntercept = false
             when(val action = e.actionMasked) {
                 MotionEvent.ACTION_DOWN  -> {
                     mActivePointerId = e.getPointerId(0)
@@ -109,9 +108,11 @@ open class SwipeItemHelper(
 //                    }
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    // check if has blocked swipe
+                    if(mInvalidatedPointerId == mActivePointerId)
+                        forceIntercept = true
                     mActivePointerId = -1
-                    mActivePointerIdBlocked = -1
-                    mTargetViewHolderBlocked = null
+                    mInvalidatedPointerId = -1
                     select(null, STATUS_IDLE)
                 }
                 else -> {
@@ -124,11 +125,10 @@ open class SwipeItemHelper(
                 }
             }
             mVelocityTracker?.addMovement(e)
-            return mTargetViewHolder != null
+            return (mTargetViewHolder != null) or forceIntercept
         }
 
         override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {
-
             mVelocityTracker?.addMovement(e)
             if (mActivePointerId == -1) {
                 return
@@ -149,6 +149,7 @@ open class SwipeItemHelper(
                 MotionEvent.ACTION_UP -> {
                     select(null, STATUS_IDLE)
                     mActivePointerId = -1
+                    mInvalidatedPointerId = -1
                 }
             }
         }
@@ -273,6 +274,9 @@ open class SwipeItemHelper(
         if (mRecyclerView.scrollState == RecyclerView.SCROLL_STATE_DRAGGING) {
             return
         }
+        // check if item is blocked (SECOND+ times recognized item in same event id)
+        if(mActivePointerId == mInvalidatedPointerId)
+            return
         val v = mRecyclerView.findChildViewUnder(e.x,e.y) ?: return
 
         val deltaX = e.getX(index) - mInitialX
@@ -287,15 +291,11 @@ open class SwipeItemHelper(
                 if((deltaX > 0).and(mDirs and TO_RIGHT == 0.toByte()))
                     return
                 val vh = mRecyclerView.getChildViewHolder(v)
-                // check if item is blocked (SECOND+ times recognized item in same event id)
-                if(mActivePointerIdBlocked == mActivePointerId && mTargetViewHolderBlocked == vh)
-                    return
                 // check for proceed (FIRST time recognized item)
                 if(!onSelectToSwipe(vh)) {
                     // when not proceed
                     // block item in this event id
-                    mTargetViewHolderBlocked = vh
-                    mActivePointerIdBlocked = mActivePointerId
+                    mInvalidatedPointerId = mActivePointerId
                     return
                 }
                 mDeltaX = 0f
