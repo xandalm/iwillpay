@@ -15,12 +15,11 @@ import com.xandealm.iwillpay.R
 import com.xandealm.iwillpay.databinding.ExpenseListItemBinding
 import com.xandealm.iwillpay.model.Expense
 import com.xandealm.iwillpay.model.getFormattedCost
+import com.xandealm.iwillpay.util.DAY_TIME
+import com.xandealm.iwillpay.util.HOUR_TIME
+import com.xandealm.iwillpay.util.MIN_TIME
 import java.util.Date
 import kotlin.math.floor
-
-private const val MIN_TIME = 1000 * 60
-private const val HOUR_TIME = MIN_TIME * 60
-private const val DAY_TIME = HOUR_TIME * 24
 
 private const val TAG = "ExpenseAdapter"
 class ExpenseAdapter(
