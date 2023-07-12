@@ -32,7 +32,7 @@ class ExpenseFragment : Fragment() {
 
     private val viewModel: ExpenseViewModel by activityViewModels {
         ExpenseViewModelFactory(
-            (activity?.application as IwillpayApplication).database.expenseDao()
+            (activity?.application as IwillpayApplication)
         )
     }
 

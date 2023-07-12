@@ -1,16 +1,23 @@
 package com.xandealm.iwillpay.ui.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.*
+import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import com.xandealm.iwillpay.IwillpayApplication
 import com.xandealm.iwillpay.model.Expense
-import com.xandealm.iwillpay.model.data.ExpenseDao
+import com.xandealm.iwillpay.util.MIN_TIME
+import com.xandealm.iwillpay.worker.ExpenseReminderWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import java.lang.Long.max
 import java.text.DateFormat
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.concurrent.TimeUnit
 
 class ExpenseException(val errno: String, message: String): RuntimeException(message) {
 
@@ -25,7 +32,10 @@ class ExpenseException(val errno: String, message: String): RuntimeException(mes
 
 private const val TAG = "ExpenseViewModel"
 
-class ExpenseViewModel(private val expenseDao: ExpenseDao): ViewModel() {
+class ExpenseViewModel(application: IwillpayApplication): ViewModel() {
+
+    private val expenseDao = application.database.expenseDao()
+    private val workManager = WorkManager.getInstance(application)
 
     private var _id: MutableLiveData<Long> = MutableLiveData()
     val id: LiveData<Long> get() = _id
@@ -50,6 +60,8 @@ class ExpenseViewModel(private val expenseDao: ExpenseDao): ViewModel() {
         }
     }
 
+    private var _previousDueDate: MutableLiveData<Date?> = MutableLiveData()
+
     private var _paidAt: MutableLiveData<Date?> = MutableLiveData()
     val paidAt: LiveData<String?> get() = Transformations.map(_paidAt) {
         it?.let {
@@ -61,15 +73,18 @@ class ExpenseViewModel(private val expenseDao: ExpenseDao): ViewModel() {
         val permission = MutableLiveData<Boolean>()
         viewModelScope.launch {
             getExpense(id).let {
-                it?.let {
+                if(it == null) {
+                    permission.postValue(true)
+                } else {
                     _id.value = it.id
                     _title.value = it.title
                     _description.value = it.description
                     _cost.value = it.cost
                     _dueDate.value = it.dueDate
+                    _previousDueDate.value = it.dueDate
                     _paidAt.value = it.paidAt
+                    permission.postValue(it.paidAt == null)
                 }
-                permission.postValue(true)
             }
         }
         return permission
@@ -92,6 +107,7 @@ class ExpenseViewModel(private val expenseDao: ExpenseDao): ViewModel() {
     }
 
     fun setDueDate(dueDate: Date) {
+        dueDate.time -= (dueDate.time % (60000)) // ignore seconds
         _dueDate.value = dueDate
     }
 
@@ -106,6 +122,23 @@ class ExpenseViewModel(private val expenseDao: ExpenseDao): ViewModel() {
         _cost.value = null
         _dueDate.value = null
         _paidAt.value = null
+        _previousDueDate.value = null
+    }
+
+    private fun scheduleReminder(expense: Expense) {
+        val data = Data.Builder()
+            .putLong(ExpenseReminderWorker.idKey,expense.id)
+            .putString(ExpenseReminderWorker.titleKey,expense.title)
+            .build()
+
+        val request = OneTimeWorkRequestBuilder<ExpenseReminderWorker>()
+            .setInitialDelay(
+                max(0,expense.dueDate.time - Date().time - (MIN_TIME * 5)),
+                TimeUnit.MILLISECONDS)
+            .setInputData(data)
+            .build()
+
+        workManager.enqueueUniqueWork("ExpenseReminder-${expense.id}",ExistingWorkPolicy.REPLACE,request)
     }
 
     private fun assertValidEntry() {
@@ -141,28 +174,40 @@ class ExpenseViewModel(private val expenseDao: ExpenseDao): ViewModel() {
         try {
             assertValidEntry()
             val expense = createExpense()
-            reset()
             viewModelScope.launch(Dispatchers.IO) {
-                if(expense.id == 0L)
-                    expenseDao.insert(expense)
+                var id = expense.id
+                if(id == 0L)
+                    id = expenseDao.insert(expense)
                 else
                     expenseDao.update(expense)
+                scheduleReminder(expense.copy(id = id))
             }
         } catch (e: ExpenseException) {
             // user tried to save expense without title, cost or due date
             // forward error if not all is empty
-            if(!_title.value.isNullOrEmpty() || !_description.value.isNullOrEmpty() || _cost.value != null || _dueDate.value != null)
-                throw e
+            if(!_title.value.isNullOrEmpty() || !_description.value.isNullOrEmpty() || _cost.value != null || _dueDate.value != null) {
+                when (e.errno) {
+                    ExpenseException.INVALID_TITLE, ExpenseException.INVALID_COST, ExpenseException.INVALID_DESCRIPTION -> {
+                        throw e
+                    }
+                    ExpenseException.INVALID_DUE_DATE -> {
+                        if (_dueDate.value != _previousDueDate.value)
+                            throw e
+                    }
+                }
+            }
+        } finally {
+            reset()
         }
     }
 
 }
 
-class ExpenseViewModelFactory(private val expenseDao: ExpenseDao): ViewModelProvider.Factory {
+class ExpenseViewModelFactory(private val application: IwillpayApplication): ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if(modelClass.isAssignableFrom(ExpenseViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ExpenseViewModel(expenseDao) as T
+            return ExpenseViewModel(application) as T
         }
         throw IllegalArgumentException("Unknown ViewModel Class")
     }
