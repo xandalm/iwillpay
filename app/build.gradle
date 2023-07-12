@@ -57,6 +57,8 @@ dependencies {
 
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
 
+    implementation("androidx.work:work-runtime-ktx:$work_version")
+
     // Recycler View
     implementation "androidx.recyclerview:recyclerview:$recyclerview_version"
     // For control over item selection of both touch and mouse driven selection
