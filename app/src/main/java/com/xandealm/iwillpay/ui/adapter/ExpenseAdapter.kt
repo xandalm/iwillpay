@@ -45,19 +45,22 @@ class ExpenseAdapter(
 
         private fun getRemaining(expense: Expense): String {
             val diffTime = expense.dueDate.time - Date().time
-            return if(diffTime >= DAY_TIME) {
+            val resources = ctx.resources
+            return if(expenseIsPaid) {
+                resources.getString(R.string.paid)
+            } else if(diffTime >= DAY_TIME) {
                 val ddRemaining = floor((diffTime / DAY_TIME).toDouble()).toInt()
-                ctx.resources.getQuantityString(R.plurals.dd_remaining,ddRemaining,ddRemaining)
+                resources.getQuantityString(R.plurals.dd_remaining,ddRemaining,ddRemaining)
             } else if(diffTime >= HOUR_TIME) {
                 val hhRemaining = floor((diffTime / HOUR_TIME).toDouble()).toInt()
-                ctx.resources.getQuantityString(R.plurals.hh_remaining,hhRemaining,hhRemaining)
+                resources.getQuantityString(R.plurals.hh_remaining,hhRemaining,hhRemaining)
             } else if(diffTime >= (MIN_TIME * 5)) {
                 val mmRemaining = floor((diffTime / MIN_TIME).toDouble()).toInt()
-                ctx.resources.getQuantityString(R.plurals.mm_remaining,mmRemaining,mmRemaining)
+                resources.getQuantityString(R.plurals.mm_remaining,mmRemaining,mmRemaining)
             } else if (diffTime > 0L) {
-                ctx.resources.getString(R.string.pay_now)
+                resources.getString(R.string.pay_now)
             } else {
-                ctx.resources.getString(R.string.youre_later)
+                resources.getString(R.string.youre_later)
             }
         }
 

@@ -17,6 +17,7 @@
         <item quantity="one">%d minute left</item>
         <item quantity="other">%d minutes left</item>
     </plurals>
+    <string name="paid">Paid</string>
     <string name="pay_now">Pay now!</string>
     <string name="youre_later">You\'re later!</string>
     <string name="details_btn">Details</string>
