@@ -43,4 +43,6 @@
     <string name="set_paid_out_title">Set as paid</string>
     <string name="set_as_paid_message">Want to set <annotation textStyle="title_emphasis">%s</annotation> as paid?</string>
 
+    <string name="channel_name">Expense reminder</string>
+    <string name="channel_description">Notify user about expense who need attention</string>
 </resources>
