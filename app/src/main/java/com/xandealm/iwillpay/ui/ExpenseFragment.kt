@@ -1,85 +1,29 @@
 package com.xandealm.iwillpay.ui
 
-import android.app.DatePickerDialog
-import android.app.Dialog
-import android.app.TimePickerDialog
 import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.text.format.DateFormat
 import android.util.Log
 import android.view.*
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.core.view.MenuProvider
-import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.navArgs
 import com.xandealm.iwillpay.IwillpayApplication
 import com.xandealm.iwillpay.R
 import com.xandealm.iwillpay.databinding.FragmentExpenseBinding
+import com.xandealm.iwillpay.ui.util.DatePickerFragment
+import com.xandealm.iwillpay.ui.util.TimePickerFragment
 import com.xandealm.iwillpay.ui.viewmodel.ExpenseException
 import com.xandealm.iwillpay.ui.viewmodel.ExpenseViewModel
 import com.xandealm.iwillpay.ui.viewmodel.ExpenseViewModelFactory
+import com.xandealm.iwillpay.util.*
 import java.util.*
 
 private const val TAG = "ExpenseFragment"
-class DatePickerFragment: DialogFragment(), DatePickerDialog.OnDateSetListener {
-
-    private lateinit var listener: (DatePicker, Int, Int, Int) -> Unit
-
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        // Use the current date as the default date in the picker
-        val c = Calendar.getInstance()
-        val year = c.get(Calendar.YEAR)
-        val month = c.get(Calendar.MONTH)
-        val day = c.get(Calendar.DAY_OF_MONTH)
-
-        // Create a new instance of DatePickerDialog and return it
-        return DatePickerDialog(requireContext(), this, year, month, day)
-    }
-
-    override fun onDateSet(view: DatePicker?, year: Int, month: Int, dayOfMonth: Int) {
-        view?.let {
-            if (this::listener.isInitialized)
-                listener(it,year,month,dayOfMonth)
-        }
-    }
-
-    fun setOnDateSetListener(listener: (view: DatePicker,year: Int,month: Int,dayOfMonth: Int) -> Unit) {
-        this.listener = listener
-    }
-
-}
-
-class TimePickerFragment : DialogFragment(), TimePickerDialog.OnTimeSetListener {
-
-    private lateinit var listener: (TimePicker, Int, Int) -> Unit
-
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        // Use the current time as the default values for the picker
-        val c = Calendar.getInstance()
-        val hour = c.get(Calendar.HOUR_OF_DAY)
-        val minute = c.get(Calendar.MINUTE)
-
-        // Create a new instance of TimePickerDialog and return it
-        return TimePickerDialog(activity, this, hour, minute, DateFormat.is24HourFormat(activity))
-    }
-
-    override fun onTimeSet(view: TimePicker, hourOfDay: Int, minute: Int) {
-        view.let {
-            if(this::listener.isInitialized)
-                this.listener(view,hourOfDay,minute)
-        }
-    }
-
-    fun setOnTimeSetListener(listener: (view: TimePicker,hourOfDay: Int,minute: Int) -> Unit) {
-        this.listener = listener
-    }
-
-}
 
 class ExpenseFragment : Fragment() {
 
@@ -139,7 +83,6 @@ class ExpenseFragment : Fragment() {
         binding.viewModel = viewModel
 
         viewModel.permissionToEdit(expenseId).observe(viewLifecycleOwner) {
-            Log.d(TAG,it.toString())
             enableEditing(it)
         }
 
@@ -237,15 +180,37 @@ class ExpenseFragment : Fragment() {
                 })
             }
             expenseDueDate.apply {
+                setOnFocusChangeListener { _, hasFocus ->
+                    if(hasFocus) {
+                        val activity = requireActivity()
+                        activity.hideSoftKeyboard()
+                        val datePickerFragment = DatePickerFragment()
+                        datePickerFragment.apply {
+                            setOnDateSetListener { _, year, month, dayOfMonth ->
+                                handleDateSet(year,month, dayOfMonth)
+                            }
+                            setOnCancelListener {
+                                activity.removeFocus()
+                            }
+                        }
+                        datePickerFragment.show(activity.supportFragmentManager,"datePicker")
+                    }
+                }
                 setOnTouchListener { _, me ->
                     if(me.action == MotionEvent.ACTION_UP) {
+                        val activity = requireActivity()
                         performClick()
-                        unfocusAndHideKeyboard()
+                        activity.hideSoftKeyboard()
                         val datePickerFragment = DatePickerFragment()
-                        datePickerFragment.setOnDateSetListener { _, year, month, dayOfMonth ->
-                            handleDateSet(year,month, dayOfMonth)
+                        datePickerFragment.apply {
+                            setOnDateSetListener { _, year, month, dayOfMonth ->
+                                handleDateSet(year,month, dayOfMonth)
+                            }
+                            setOnCancelListener {
+                                activity.removeFocus()
+                            }
                         }
-                        datePickerFragment.show(requireActivity().supportFragmentManager,"datePicker")
+                        datePickerFragment.show(activity.supportFragmentManager,"datePicker")
                     }
                     true
                 }
@@ -274,7 +239,7 @@ class ExpenseFragment : Fragment() {
 
     private fun handleTimeSet(hourOfDay: Int, minute: Int) {
         try {
-            val time = hourOfDay.toLong() * 1000 * 60 * 60 + minute * 1000 * 60
+            val time = hourOfDay.toLong() * HOUR_TIME + minute * MIN_TIME
             dueDate.time += time
             viewModel.setDueDate(this.dueDate)
         } catch (e: ExpenseException) {
@@ -293,14 +258,13 @@ class ExpenseFragment : Fragment() {
 
     override fun onStop() {
         super.onStop()
-        unfocusAndHideKeyboard()
+        activity?.hideSoftKeyboardAndRemoveFocus()
     }
 
     override fun onDestroyView() {
-        Log.d(TAG,"Destroy")
         super.onDestroyView()
         // Hide keyboard.
-        unfocusAndHideKeyboard()
+        activity?.hideSoftKeyboardAndRemoveFocus()
         try {
             saveExpense()
         } catch(e: ExpenseException) {
@@ -311,16 +275,5 @@ class ExpenseFragment : Fragment() {
 
     private fun saveExpense() {
         viewModel.saveExpense()
-    }
-
-    private fun unfocusAndHideKeyboard() {
-        val activity = requireActivity()
-        val inputMethodManager = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as
-                InputMethodManager
-        val currentFocused = activity.currentFocus
-        if(currentFocused != null) {
-            inputMethodManager.hideSoftInputFromWindow(currentFocused.windowToken, 0)
-            currentFocused.clearFocus()
-        }
     }
 }
