@@ -1,6 +1,7 @@
 package com.xandealm.iwillpay.ui
 
 import android.annotation.SuppressLint
+import android.graphics.Canvas
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.Annotation
@@ -14,6 +15,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.findNavController
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.xandealm.iwillpay.IwillpayApplication
@@ -66,7 +68,8 @@ class ExpensesListFragment : Fragment() {
         }
 
         expenseRecyclerView = binding.expenseRecyclerView
-        expenseRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        val layoutManager = LinearLayoutManager(requireContext())
+        expenseRecyclerView.layoutManager = layoutManager
         val adapter = ExpenseAdapter(
             requireContext(),
         ) {
@@ -166,6 +169,27 @@ class ExpensesListFragment : Fragment() {
         }
         sih.attachToRecyclerView(expenseRecyclerView)
         expenseRecyclerView.addItemDecoration(sd)
+
+        val dividerItemDecoration = object: DividerItemDecoration(context,layoutManager.orientation) {
+            override fun onDraw(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
+                super.onDraw(c, parent, state)
+                val left = parent.paddingLeft
+                val right = parent.width - parent.paddingRight
+
+                val childCount = parent.childCount
+                drawable?.let {
+                    for (i in 0 until (childCount - 1)) {
+                        val child = parent.getChildAt(i)
+                        val params = child.layoutParams as RecyclerView.LayoutParams
+                        val top = child.bottom + params.bottomMargin
+                        val bottom: Int = top + it.intrinsicHeight
+                        it.setBounds(left, top, right, bottom)
+                        it.draw(c)
+                    }
+                }
+            }
+        }
+        expenseRecyclerView.addItemDecoration(dividerItemDecoration)
 
         viewModel.expenses.observe(viewLifecycleOwner) { items ->
             items?.let {
